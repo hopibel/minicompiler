@@ -17,6 +17,7 @@ string showTok(Token_t t) {
   case CLOSE: return "CLOSE";
   case PLUS:  return "PLUS";
   case MULT:  return "MULT";
+  default:    return "UNK";
   }
   // NOTE: The (clang) compiler is able to figure out that
   // along all control-flow paths, a return statement will be reached.

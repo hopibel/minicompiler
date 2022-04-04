@@ -3,6 +3,7 @@
 #ifndef __VM__
 #define __VM__
 
+#include <string>
 #include <vector>
 #include <stack>
 

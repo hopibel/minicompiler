@@ -8,20 +8,20 @@
 #include <string>
 #include <memory>
 
-using namespace std;
-
 class Exp {
 public:
   virtual int eval() = 0;
-  virtual string pretty() = 0;
+  virtual std::string pretty() = 0;
+  virtual std::string smartPretty(bool isSubexpression = false) = 0;
 };
 
 class IntExp : public Exp {
   int val;
   public:
   IntExp(int _val) { val = _val; }
-  int eval();
-  string pretty();
+  int eval() override;
+  std::string pretty() override;
+  std::string smartPretty(bool) override;
 };
 
 class PlusExp : public Exp {
@@ -31,8 +31,9 @@ class PlusExp : public Exp {
   PlusExp(std::shared_ptr<Exp> _e1, std::shared_ptr<Exp> _e2) {
       e1 = _e1; e2 = _e2;
   }
-  int eval();
-  string pretty();
+  int eval() override;
+  std::string pretty() override;
+  std::string smartPretty(bool isSubexpression) override;
 };
 
 
@@ -43,13 +44,15 @@ class MultExp : public Exp {
   MultExp(std::shared_ptr <Exp> _e1, std::shared_ptr<Exp> _e2) {
       e1 = _e1; e2 = _e2;
   }
-  int eval();
-  string pretty();
+  int eval() override;
+  std::string pretty() override;
+  std::string smartPretty(bool) override;
 };
 
 // Short-hands
 
-typedef std::shared_ptr<Exp> EXP;
+// typedef std::shared_ptr<Exp> EXP;
+using EXP = std::shared_ptr<Exp>;
 
 EXP newInt(int i);
 

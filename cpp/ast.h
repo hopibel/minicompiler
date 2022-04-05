@@ -7,12 +7,16 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <vector>
+
+#include "vm.h"
 
 class Exp {
 public:
   virtual int eval() = 0;
   virtual std::string pretty() = 0;
   virtual std::string smartPretty(bool isSubexpression = false) = 0;
+  virtual std::vector<Code>& toCode(std::vector<Code>& code) = 0;
 };
 
 class IntExp : public Exp {
@@ -22,6 +26,7 @@ class IntExp : public Exp {
   int eval() override;
   std::string pretty() override;
   std::string smartPretty(bool) override;
+  std::vector<Code>& toCode(std::vector<Code>& code) override;
 };
 
 class PlusExp : public Exp {
@@ -34,6 +39,7 @@ class PlusExp : public Exp {
   int eval() override;
   std::string pretty() override;
   std::string smartPretty(bool isSubexpression) override;
+  std::vector<Code>& toCode(std::vector<Code>& code) override;
 };
 
 
@@ -47,6 +53,7 @@ class MultExp : public Exp {
   int eval() override;
   std::string pretty() override;
   std::string smartPretty(bool) override;
+  std::vector<Code>& toCode(std::vector<Code>& code) override;
 };
 
 // Short-hands

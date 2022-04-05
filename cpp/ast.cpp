@@ -2,10 +2,16 @@
 #include <string>
 
 #include "ast.h"
+#include "vm.h"
 
 int IntExp::eval() { return val; }
 
 std::string IntExp::pretty() { return std::to_string(val); }
+
+std::vector<Code>& IntExp::toCode(std::vector<Code>& code) {
+    code.push_back(newPush(val));
+    return code;
+}
 
 int PlusExp::eval() { return e1->eval() + e2->eval(); }
 
@@ -18,6 +24,13 @@ std::string PlusExp::pretty() {
     return s;
 }
 
+std::vector<Code>& PlusExp::toCode(std::vector<Code>& code) {
+    e1->toCode(code);
+    e2->toCode(code);
+    code.push_back(newPlus());
+    return code; // TODO: void return instead?
+}
+
 int MultExp::eval() { return e1->eval() * e2->eval(); }
 
 std::string MultExp::pretty() {
@@ -27,6 +40,13 @@ std::string MultExp::pretty() {
     s.append(e2->pretty());
     s.append(")");
     return s;
+}
+
+std::vector<Code>& MultExp::toCode(std::vector<Code>& code) {
+    e1->toCode(code);
+    e2->toCode(code);
+    code.push_back(newMult());
+    return code;
 }
 
 EXP newInt(int i) { return std::make_shared<IntExp>(i); }

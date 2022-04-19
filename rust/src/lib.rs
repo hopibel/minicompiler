@@ -1,3 +1,5 @@
+pub mod tokenizer;
+
 // AST as recursive data structure
 // alternative: enum Exp using pattern matching in eval implementation
 mod ast {

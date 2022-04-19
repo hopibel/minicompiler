@@ -1,3 +1,5 @@
+// derive implements <Token> == <Token> comparisons
+#[derive(PartialEq)]
 enum Token {
     EOS, // End of string
     ZERO,
@@ -16,7 +18,7 @@ struct Tokenizer {
 }
 
 impl Tokenizer {
-    fn new(input: String) -> Self {
+    fn new(input: &str) -> Self {
         // NOTE: struct members private and immutable by default
         let mut tokenizer = Tokenizer {
             s: input.chars().collect(),
@@ -47,6 +49,7 @@ impl Tokenizer {
             match token {
                 Some(token) => { // set current token
                     self.token = token;
+                    self.pos += 1;
                     break;
                 },
                 None => (),  // skip all other symbols
@@ -75,5 +78,44 @@ mod tests {
     #[test]
     fn is_running() {
         assert_eq!(2, 2);
+    }
+
+    #[test]
+    fn eos() {
+        let mut t = Tokenizer::new("");
+        assert!(matches!(t.token, Token::EOS));
+        t.nextToken();
+        assert!(matches!(t.token, Token::EOS));
+    }
+
+    #[test]
+    fn skip_unknown() {
+        let mut t = Tokenizer::new("13+");
+        assert!(matches!(t.token, Token::ONE));
+        t.nextToken();
+        assert!(matches!(t.token, Token::PLUS));
+        t.nextToken();
+        assert!(matches!(t.token, Token::EOS));
+        t.nextToken();
+    }
+
+    #[test]
+    fn tokenize() {
+        let mut t = Tokenizer::new("012()+*");
+        assert!(matches!(t.token, Token::ZERO));
+        t.nextToken();
+        assert!(matches!(t.token, Token::ONE));
+        t.nextToken();
+        assert!(matches!(t.token, Token::TWO));
+        t.nextToken();
+        assert!(matches!(t.token, Token::OPEN));
+        t.nextToken();
+        assert!(matches!(t.token, Token::CLOSE));
+        t.nextToken();
+        assert!(matches!(t.token, Token::PLUS));
+        t.nextToken();
+        assert!(matches!(t.token, Token::MULT));
+        t.nextToken();
+        assert!(matches!(t.token, Token::EOS));
     }
 }

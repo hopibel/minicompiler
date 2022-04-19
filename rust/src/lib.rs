@@ -1,9 +1,10 @@
 pub mod tokenizer;
+pub mod parser;
 
 // AST as recursive data structure
 // alternative: enum Exp using pattern matching in eval implementation
 mod ast {
-    trait Exp {
+    pub trait Exp {
         fn eval(&self) -> i32;
         fn pretty(&self) -> String;
         fn smart_pretty(&self, is_subexpression: bool) -> String;
@@ -35,13 +36,17 @@ mod ast {
         }
     }
 
-    struct PlusExp {
+    pub struct PlusExp {
         l: Box<dyn Exp>,
         r: Box<dyn Exp>,
     }
 
     impl PlusExp {
-        fn new(l: impl Exp + 'static, r: impl Exp + 'static) -> Self {
+        pub fn new(l: Box<dyn Exp>, r: Box<dyn Exp>) -> Self {
+            Self { l, r }
+        }
+
+        pub fn new_static(l: impl Exp + 'static, r: impl Exp + 'static) -> Self {
             Self { l: Box::new(l), r: Box::new(r) }
         }
     }
@@ -65,13 +70,17 @@ mod ast {
         }
     }
 
-    struct MultExp {
+    pub struct MultExp {
         l: Box<dyn Exp>,
         r: Box<dyn Exp>,
     }
 
     impl MultExp {
-        fn new(l: impl Exp + 'static, r: impl Exp + 'static) -> Self {
+        pub fn new(l: Box<dyn Exp>, r: Box<dyn Exp>) -> Self {
+            Self { l, r }
+        }
+
+        pub fn new_static(l: impl Exp + 'static, r: impl Exp + 'static) -> Self {
             Self { l: Box::new(l), r: Box::new(r) }
         }
     }
@@ -104,7 +113,7 @@ mod ast {
 
         #[test]
         fn eval_plus() {
-            let exp = PlusExp::new(
+            let exp = PlusExp::new_static(
                 IntExp::new(2),
                 IntExp::new(2)
             );
@@ -113,7 +122,7 @@ mod ast {
 
         #[test]
         fn eval_mult() {
-            let exp = MultExp::new(
+            let exp = MultExp::new_static(
                 IntExp::new(6),
                 IntExp::new(9)
             );
@@ -123,9 +132,9 @@ mod ast {
 
         #[test]
         fn pretty_print() {
-            let exp = PlusExp::new(
-                MultExp::new(
-                    PlusExp::new(
+            let exp = PlusExp::new_static(
+                MultExp::new_static(
+                    PlusExp::new_static(
                         IntExp::new(1),
                         IntExp::new(2)
                     ),
@@ -140,9 +149,9 @@ mod ast {
         // TODO: implement cpp parser + pretty print integration tests
         // NOTE: integration tests *outside* ast module using only public API
         fn smart_pretty_print() {
-            let exp = PlusExp::new(
-                MultExp::new(
-                    PlusExp::new(
+            let exp = PlusExp::new_static(
+                MultExp::new_static(
+                    PlusExp::new_static(
                         IntExp::new(1),
                         IntExp::new(2)
                     ),

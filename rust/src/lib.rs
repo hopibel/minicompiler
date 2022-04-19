@@ -11,12 +11,12 @@ mod ast {
         fn compile(&self) { todo!("Exp -> opcode sequence") }
     }
 
-    struct IntExp {
+    pub struct IntExp {
         val: i32,
     }
 
     impl IntExp {
-        fn new(val: i32) -> IntExp {
+        pub fn new(val: i32) -> IntExp {
             IntExp { val }
         }
     }

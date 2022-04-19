@@ -148,7 +148,7 @@ mod ast {
                 ),
                 IntExp::new(2)
             );
-            assert_eq!(exp.pretty(), "(1+2)*0+2")
+            assert_eq!(exp.smart_pretty(false), "(1+2)*0+2")
         }
     }
 }

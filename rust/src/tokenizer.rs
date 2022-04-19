@@ -1,6 +1,6 @@
 // derive implements <Token> == <Token> comparisons
 #[derive(PartialEq)]
-enum Token {
+pub enum Token {
     EOS, // End of string
     ZERO,
     ONE,
@@ -11,25 +11,25 @@ enum Token {
     MULT,
 }
 
-struct Tokenizer {
+pub struct Tokenizer {
+    pub token: Token,
     s: Vec<char>,  // NOTE: can't use Chars iterator because input string isn't owned by the struct
     pos: usize,
-    token: Token,
 }
 
 impl Tokenizer {
-    fn new(input: &str) -> Self {
+    pub fn new(input: &str) -> Self {
         // NOTE: struct members private and immutable by default
         let mut tokenizer = Tokenizer {
+            token: Token::EOS,
             s: input.chars().collect(),
             pos: 0,
-            token: Token::EOS,
         };
-        tokenizer.nextToken();
+        tokenizer.next_token();
         return tokenizer;
     }
 
-    fn nextToken(&mut self) {
+    pub fn next_token(&mut self) {
         loop {
             if self.pos >= self.s.len() {
                 self.token = Token::EOS;
@@ -66,7 +66,7 @@ impl Tokenizer {
         unimplemented!()
     }
 
-    fn showTok() {
+    fn show_tok() {
         unimplemented!()
     }
 }
@@ -84,7 +84,7 @@ mod tests {
     fn eos() {
         let mut t = Tokenizer::new("");
         assert!(matches!(t.token, Token::EOS));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::EOS));
     }
 
@@ -92,30 +92,30 @@ mod tests {
     fn skip_unknown() {
         let mut t = Tokenizer::new("13+");
         assert!(matches!(t.token, Token::ONE));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::PLUS));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::EOS));
-        t.nextToken();
+        t.next_token();
     }
 
     #[test]
     fn tokenize() {
         let mut t = Tokenizer::new("012()+*");
         assert!(matches!(t.token, Token::ZERO));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::ONE));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::TWO));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::OPEN));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::CLOSE));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::PLUS));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::MULT));
-        t.nextToken();
+        t.next_token();
         assert!(matches!(t.token, Token::EOS));
     }
 }

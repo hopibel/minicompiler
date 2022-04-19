@@ -106,4 +106,9 @@ mod tests {
     fn has_tests() {
         todo!("port parser integration tests!")
     }
+
+    #[test]
+    fn parse_int() {
+        assert_eq!(Parser::new("1").parse().unwrap().eval(), 1);
+    }
 }

@@ -96,8 +96,8 @@ impl fmt::Display for VM {
             .collect::<Vec<String>>()
             .join(",");
 
-        write!(f, "Code: {}", code_string)?;
-        write!(f, "Stack: {}", stack_string)?;
+        writeln!(f, "Code: {}", code_string)?;
+        writeln!(f, "Stack: {}", stack_string)?;
 
         Ok(())
     }

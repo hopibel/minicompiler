@@ -12,6 +12,7 @@ impl Parser {
         }
     }
 
+    // TODO: Result for better parse errors
     // E ::= T E'
     pub fn parse(&mut self) -> Option<Box<dyn ast::Exp>> {
         self.parse_e()

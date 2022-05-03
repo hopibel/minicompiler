@@ -1,14 +1,17 @@
-pub mod tokenizer;
 pub mod parser;
+pub mod tokenizer;
+pub mod vm;
 
-// AST as recursive data structure
+// AST as <dyn Exp> tree
 // alternative: enum Exp using pattern matching in eval implementation
 mod ast {
+    use crate::vm;
+
     pub trait Exp {
         fn eval(&self) -> i32;
         fn pretty(&self) -> String;
         fn smart_pretty(&self, is_subexpression: bool) -> String;
-        fn compile(&self) { todo!("Exp -> opcode sequence") }
+        fn compile(&self) -> Vec<vm::Code>;
     }
 
     pub struct IntExp {
@@ -34,6 +37,10 @@ mod ast {
         fn smart_pretty(&self, is_subexpression: bool) -> String {
             self.pretty()
         }
+
+        fn compile(&self) -> Vec<vm::Code> {
+            vec![vm::Code::Push(self.val)]
+        }
     }
 
     pub struct PlusExp {
@@ -47,7 +54,10 @@ mod ast {
         }
 
         pub fn new_static(l: impl Exp + 'static, r: impl Exp + 'static) -> Self {
-            Self { l: Box::new(l), r: Box::new(r) }
+            Self {
+                l: Box::new(l),
+                r: Box::new(r),
+            }
         }
     }
 
@@ -61,12 +71,24 @@ mod ast {
         }
 
         fn smart_pretty(&self, is_subexpression: bool) -> String {
-            let inner = format!("{}+{}", self.l.smart_pretty(false), self.r.smart_pretty(false));
+            let inner = format!(
+                "{}+{}",
+                self.l.smart_pretty(false),
+                self.r.smart_pretty(false)
+            );
             if is_subexpression {
                 format!("({})", inner)
             } else {
                 inner
             }
+        }
+
+        fn compile(&self) -> Vec<vm::Code> {
+            let mut code = self.l.compile();
+            code.append(&mut self.r.compile());
+            code.push(vm::Code::Plus);
+
+            code
         }
     }
 
@@ -81,7 +103,10 @@ mod ast {
         }
 
         pub fn new_static(l: impl Exp + 'static, r: impl Exp + 'static) -> Self {
-            Self { l: Box::new(l), r: Box::new(r) }
+            Self {
+                l: Box::new(l),
+                r: Box::new(r),
+            }
         }
     }
 
@@ -96,7 +121,19 @@ mod ast {
 
         #[allow(unused_variables)]
         fn smart_pretty(&self, is_subexpression: bool) -> String {
-            format!("{}*{}", self.l.smart_pretty(true), self.r.smart_pretty(true))
+            format!(
+                "{}*{}",
+                self.l.smart_pretty(true),
+                self.r.smart_pretty(true)
+            )
+        }
+
+        fn compile(&self) -> Vec<vm::Code> {
+            let mut code = self.l.compile();
+            code.append(&mut self.r.compile());
+            code.push(vm::Code::Mult);
+
+            code
         }
     }
 
@@ -113,19 +150,13 @@ mod ast {
 
         #[test]
         fn eval_plus() {
-            let exp = PlusExp::new_static(
-                IntExp::new(2),
-                IntExp::new(2)
-            );
+            let exp = PlusExp::new_static(IntExp::new(2), IntExp::new(2));
             assert_eq!(exp.eval(), 2 + 2);
         }
 
         #[test]
         fn eval_mult() {
-            let exp = MultExp::new_static(
-                IntExp::new(6),
-                IntExp::new(9)
-            );
+            let exp = MultExp::new_static(IntExp::new(6), IntExp::new(9));
             assert_ne!(exp.eval(), 42);
             assert_eq!(exp.eval(), 6 * 9);
         }
@@ -134,30 +165,23 @@ mod ast {
         fn pretty_print() {
             let exp = PlusExp::new_static(
                 MultExp::new_static(
-                    PlusExp::new_static(
-                        IntExp::new(1),
-                        IntExp::new(2)
-                    ),
-                    IntExp::new(0)
+                    PlusExp::new_static(IntExp::new(1), IntExp::new(2)),
+                    IntExp::new(0),
                 ),
-                IntExp::new(2)
+                IntExp::new(2),
             );
             assert_eq!(exp.pretty(), "(((1+2)*0)+2)")
         }
 
         #[test]
-        // TODO: implement cpp parser + pretty print integration tests
         // NOTE: integration tests *outside* ast module using only public API
         fn smart_pretty_print() {
             let exp = PlusExp::new_static(
                 MultExp::new_static(
-                    PlusExp::new_static(
-                        IntExp::new(1),
-                        IntExp::new(2)
-                    ),
-                    IntExp::new(0)
+                    PlusExp::new_static(IntExp::new(1), IntExp::new(2)),
+                    IntExp::new(0),
                 ),
-                IntExp::new(2)
+                IntExp::new(2),
             );
             assert_eq!(exp.smart_pretty(false), "(1+2)*0+2")
         }

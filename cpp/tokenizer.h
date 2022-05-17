@@ -29,8 +29,8 @@ class Tokenize {
   int pos;
 public:
   Tokenize(string s) {
-         this->s = s;
-     pos = 0;
+    this->s = s;
+    pos = 0;
   }
 
     // Scan throuh string, letter (symbol) by letter.

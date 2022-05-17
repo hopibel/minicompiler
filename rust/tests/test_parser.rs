@@ -34,8 +34,16 @@ fn parse_pretty_invalid_panic() {
 }
 
 #[test]
-fn parse_pretty_invalid_none() {
-    assert!(Parser::new("+ 1 1 2 3 5 8").parse().is_none());
-    assert!(Parser::new(") (1+2)").parse().is_none());
-    assert!(Parser::new("").parse().is_none());
+fn parse_invalid_err() {
+    assert!(Parser::new("+ 1 1 2 3 5 8").parse().is_err());
+    assert!(Parser::new(") (1+2)").parse().is_err());
+    assert!(Parser::new("( 1+1 ").parse().is_err());
+    assert!(Parser::new("").parse().is_err());
+}
+
+#[test]
+fn parse_err_messages() {
+    assert_eq!(Parser::new("").parse().err(), Some("Unexpected token 'EOS' at column 0".to_string()));
+    assert_eq!(Parser::new("(1+2) * )").parse().err(), Some("Unexpected token ')' at column 9".to_string()));
+    assert_eq!(Parser::new("(1+1").parse().err(), Some("Unclosed parenthesis at column 1".to_string()));
 }

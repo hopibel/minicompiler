@@ -11,6 +11,21 @@ pub enum Token {
     MULT,
 }
 
+impl Token {
+    pub fn show(&self) -> &str {
+        match self {
+            Token::EOS => "EOS",
+            Token::ZERO => "0",
+            Token::ONE => "1",
+            Token::TWO => "2",
+            Token::OPEN => "(",
+            Token::CLOSE => ")",
+            Token::PLUS => "+",
+            Token::MULT => "*",
+        }
+    }
+}
+
 pub struct Tokenizer {
     pub token: Token,
     s: Vec<char>,  // NOTE: can't use Chars iterator because input string isn't owned by the struct
@@ -58,15 +73,15 @@ impl Tokenizer {
         }
     }
 
-    fn scan() {
+    pub fn position(&self) -> usize {
+        self.pos
+    }
+
+    pub fn scan() {
         unimplemented!()
     }
 
-    fn show() {
-        unimplemented!()
-    }
-
-    fn show_tok() {
+    pub fn show() {
         unimplemented!()
     }
 }

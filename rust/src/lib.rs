@@ -4,7 +4,7 @@ pub mod vm;
 
 // AST as <dyn Exp> tree
 // alternative: enum Exp using pattern matching in eval implementation
-mod ast {
+pub mod ast {
     use crate::vm;
 
     pub trait Exp {

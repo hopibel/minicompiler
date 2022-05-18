@@ -70,11 +70,22 @@ Portierung von C++11 nach Rust
 - Rust: `Exp` als Trait. Ähnlich wie Java Interface oder C++20 Concepts aber flexibler
     - NOTE: Separation von Daten und Implementierung. Interface zu Java-Klasse hinzufügen muss Klassendefinition ändern. Traits können sogar externe Typen erweitern, keine Vererbung nötig (ist sogar nicht möglich in Rust)
     - Alternativ könnte Enums verwendet werden. Könnte sogar performanter sein (Box<dyn> pointer indirection vermieden). Enums werden aber für den Tokenizer verwendet, also werden hier Traits demonstriert
+    - NOTE: In Rust sind Variablen standardmäßig schreibgeschützt (vgl. C++ explizites `const`) und müssen explizit mit dem Keyword `mut` ("mutable") schreibbar gemacht werden
+    - NOTE: Rust Ownership memory management model
+        - Rules
+            - every value has one and only one variable called its owner
+            - the value is dropped when the owner goes out of scope
+        - TODO: include code snippet
+        - Zuweisung: Wert wird verschoben und die neue Variable ist jetzt sein Eigentümer
+            - alte Variable ist jetzt ungültig. weitere Zugriffe geben Kompilierfehler
+                - !!! dies erlaubt es Rust, viele Speicherfehler (bsp. Double-Free von Heap-Variablen) zur Kompilierzeit zu erkennen
+            - Ausnahme: bei Typen mit `Copy` Trait bleibt originaler Eigentümer gültig nach Zuweisung
+            - `Clone` Trait für tiefe Kopien
+        - Reference (`&val`): `val` ausleihen, ohne Eigentümer zu werden. Erfordert zu Kompilierzeit dass Lifetime von Referenz nachweisbar kürzer-gleich Lifetime von Wert. Ungültige Referenz ist Kompilierfehler
 
 ### Tokenizer
 - Rust
-    - pattern matching
-    - Enum: eigentlich eine tagged union (werte können unterschiedliche Typen sein + enum weiß welcher Typ enthalten ist)
+    - Enum + pattern matching
 
 ### Parser
 - Exp dynamic (heap) vs static (stack): Rust variable lifetime specifier
@@ -82,6 +93,10 @@ Portierung von C++11 nach Rust
 ### Compiler
 
 ### Virtuelle Maschine
+- C++
+    - Opcodes sind *fast* als Enum darstellbar. Problem: PUSH braucht einen `int`, also müssen wir leider eine Klasse verwenden, die Opcode + optionaler int speichern kann
+- Rust
+    - Enum: eigentlich eine tagged union (Werte können unterschiedliche Typen sein + Enum weiß welcher Typ enthalten ist). Erlaubt uns einfach PUSH zusammen mit i32-Wert zu speichern, ohne eigene `struct` zu definieren
 
 ### Fehler-Behandlung
 - C++: Exceptions oder spezielle Rückgabewerte (hier wird Optional verwendet)
@@ -89,3 +104,9 @@ Portierung von C++11 nach Rust
     - `Result<T, Err>`. Enum von Rückgabewert T und Fehlerwert Err. bsp `Result<Exp, String>`
     - `Result`s sind für behebbare Fehler. Err muss explizit behandelt werden (`match` oder `if let`)
         - vgl. Exceptions: Programmfluss wird unterbrochen durch Sprung zum `catch`-Block
+
+Literatur
+---------
+
+- // Rust book: https://doc.rust-lang.org/book/
+- // DE translation: https://rust-lang-de.github.io/rustbook-de/

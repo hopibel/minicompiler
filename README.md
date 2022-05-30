@@ -51,25 +51,42 @@ Portierung von C++11 nach Rust
 
 ### Projekt-Setup
 - C++: Makefile schreiben
-    - sehr DIY
+    - Manuell definieren, wie Programme kompiliert werden sollen
+    - Reines Build-Tool.
 - Rust: `cargo new --lib <name>`
+    - Cargo: offizielles Bau-System und Paketmanager von Rust
     - cargo kümmert sich um alles
-        - package manager: packages ("crates") automatisch heruntergeladen (vgl. npm, pip)
+        - package manager: externe dependencies ("crates") automatisch heruntergeladen (vgl. npm, pip)
         - build
-            - projekt-struktur implizit durch ordner-struktur definieren (vgl. Makefile/cmake wo jede datei manuell aufgelistet werden muss)
+            - projekt-struktur durch Ordner-Hierarchie und Imports definieren (vgl. Makefile/cmake wo jede datei eingetragen wird)
+                - `src/main.rs`: default executable file, weitere in `src/bin/`
+                - `src/lib.rs`: default library file
         - tests: mehr dazu unten
 
 ### Testen
 - C++: selbstgemachte test-util. inflexibel. alternativ: externe Bibliothek
 - Rust: first-class support für unit und integration tests durch cargo
-    - unit tests als private submodul
-    - integration tests in `tests/`
+    - unit tests als private submodule: einzelnes Modul testen. innerhalb Modul können private Schnittstellen getestet werden
+    - integration tests in `tests/`: tests laufen ausserhalb Modul, verwenden nur öffentliche Schnittstellen
 
 ### AST
 - C++: Klassenhierarchie. Abstrakte Basis-Klasse `Exp`. Polymorphie benötigt
+    - abstract class Exp
+        - class IntExp
+        - class PlusExp
+        - class MultExp
+    - Baum von `shared_ptr<Exp>`
 - Rust: `Exp` als Trait. Ähnlich wie Java Interface oder C++20 Concepts aber flexibler
-    - NOTE: Separation von Daten und Implementierung. Interface zu Java-Klasse hinzufügen muss Klassendefinition ändern. Traits können sogar externe Typen erweitern, keine Vererbung nötig (ist sogar nicht möglich in Rust)
-    - Alternativ könnte Enums verwendet werden. Könnte sogar performanter sein (Box<dyn> pointer indirection vermieden). Enums werden aber für den Tokenizer verwendet, also werden hier Traits demonstriert
+    - Baum von `Box<dyn Exp>` (Analog zu C++ impl)
+        - `Box`: smart pointer ähnlich wie `unique_ptr`
+        - `Box<dyn Exp>` ist ein Trait-Objekt (Rusts Lösung für Polymorphie)
+            - `dyn Exp` steht für eine Instanz eines beliebigen Typs, der den Trait Exp implementiert.
+            - konkreter Typ erst zur Laufzeit bekannt. Trait-Objekte haben Pointer zu Daten und Pointer zu Lookup-Tabelle für Trait-Methoden (i.e., eine vtable)
+            - `dyn` steht für "dynamic" (dispatch)
+        - Warum `Box`?
+            - Typgrößen müssen zur Kompilierzeit bekannt sein. Da der AST beliebig groß werden kann, verstecken wir Kindknoten hinter Pointern, weil sie konstante Größe haben.
+    - NOTE: struct def und Trait impl sind separate Blöcke. vgl Java: Interface hinzufügen ändert die Klassendefinition. Traits können sogar externe Typen erweitern, keine Vererbung nötig (ist sogar nicht möglich in Rust)
+    - Alternativ könnte Enums verwendet werden. Könnte sogar performanter sein (Box<dyn Exp> pointer indirection vermieden). Enums werden aber schon für den Tokenizer verwendet, also werden hier Traits demonstriert
     - NOTE: In Rust sind Variablen standardmäßig schreibgeschützt (vgl. C++ explizites `const`) und müssen explizit mit dem Keyword `mut` ("mutable") schreibbar gemacht werden
     - NOTE: Rust Ownership memory management model
         - Rules
@@ -81,7 +98,7 @@ Portierung von C++11 nach Rust
                 - !!! dies erlaubt es Rust, viele Speicherfehler (bsp. Double-Free von Heap-Variablen) zur Kompilierzeit zu erkennen
             - Ausnahme: bei Typen mit `Copy` Trait bleibt originaler Eigentümer gültig nach Zuweisung
             - `Clone` Trait für tiefe Kopien
-        - Reference (`&val`): `val` ausleihen, ohne Eigentümer zu werden. Erfordert zu Kompilierzeit dass Lifetime von Referenz nachweisbar kürzer-gleich Lifetime von Wert. Ungültige Referenz ist Kompilierfehler
+        - Reference (`&val`): `val` ausleihen, ohne Eigentümer zu werden. Erfordert zu Kompilierzeit dass Lifetime von Referenz nachweisbar kürzer-gleich Lifetime von Wert. Ungültige Referenz ist Kompilierfehler statt Runtime-Fehler
 
 ### Tokenizer
 - Rust

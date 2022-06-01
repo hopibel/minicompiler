@@ -49,6 +49,8 @@ cargo clean
 Portierung von C++11 nach Rust
 ------------------------------
 
+- NOTE: keep short. mainly use concrete examples for translation from C++ to Rust
+
 ### Projekt-Setup
 - C++: Makefile schreiben
     - Manuell definieren, wie Programme kompiliert werden sollen
@@ -77,12 +79,13 @@ Portierung von C++11 nach Rust
         - class MultExp
     - Baum von `shared_ptr<Exp>`
 - Rust: `Exp` als Trait. Ähnlich wie Java Interface oder C++20 Concepts aber flexibler
+    - traits sind keine objekte
     - Baum von `Box<dyn Exp>` (Analog zu C++ impl)
+        - default stack allocated. box is for heap
         - `Box`: smart pointer ähnlich wie `unique_ptr`
         - `Box<dyn Exp>` ist ein Trait-Objekt (Rusts Lösung für Polymorphie)
             - `dyn Exp` steht für eine Instanz eines beliebigen Typs, der den Trait Exp implementiert.
-            - konkreter Typ erst zur Laufzeit bekannt. Trait-Objekte haben Pointer zu Daten und Pointer zu Lookup-Tabelle für Trait-Methoden (i.e., eine vtable)
-            - `dyn` steht für "dynamic" (dispatch)
+            - konkreter Typ erst zur Laufzeit bekannt
         - Warum `Box`?
             - Typgrößen müssen zur Kompilierzeit bekannt sein. Da der AST beliebig groß werden kann, verstecken wir Kindknoten hinter Pointern, weil sie konstante Größe haben.
     - NOTE: struct def und Trait impl sind separate Blöcke. vgl Java: Interface hinzufügen ändert die Klassendefinition. Traits können sogar externe Typen erweitern, keine Vererbung nötig (ist sogar nicht möglich in Rust)

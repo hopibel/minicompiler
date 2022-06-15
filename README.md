@@ -9,6 +9,8 @@ Projektarbeit: Mini-Compiler in Rust
 
 // Basis: [Parser/Interpreter/Compiler für arithmetische Ausdrücke](https://sulzmann.github.io/SoftwareProjekt/schein-neu.html#(5))
 
+TODO: what does the project do
+
 // expressions are tokenized and parsed into an abstract syntax tree which can be interpreted directly or compiled into opcodes for the included stack-based virtual machine
 
 Usage
@@ -52,6 +54,7 @@ Portierung von C++11 nach Rust
 - NOTE: keep short. mainly use concrete examples for translation from C++ to Rust
 
 ### Projekt-Setup
+TODO
 - C++: Makefile schreiben
     - Manuell definieren, wie Programme kompiliert werden sollen
     - Reines Build-Tool.
@@ -66,59 +69,115 @@ Portierung von C++11 nach Rust
         - tests: mehr dazu unten
 
 ### Testen
+TODO
 - C++: selbstgemachte test-util. inflexibel. alternativ: externe Bibliothek
 - Rust: first-class support für unit und integration tests durch cargo
     - unit tests als private submodule: einzelnes Modul testen. innerhalb Modul können private Schnittstellen getestet werden
     - integration tests in `tests/`: tests laufen ausserhalb Modul, verwenden nur öffentliche Schnittstellen
 
 ### AST
-- C++: Klassenhierarchie. Abstrakte Basis-Klasse `Exp`. Polymorphie benötigt
-    - abstract class Exp
-        - class IntExp
-        - class PlusExp
-        - class MultExp
-    - Baum von `shared_ptr<Exp>`
-- Rust: `Exp` als Trait. Ähnlich wie Java Interface oder C++20 Concepts aber flexibler
-    - traits sind keine objekte
-    - Baum von `Box<dyn Exp>` (Analog zu C++ impl)
-        - default stack allocated. box is for heap
-        - `Box`: smart pointer ähnlich wie `unique_ptr`
-        - `Box<dyn Exp>` ist ein Trait-Objekt (Rusts Lösung für Polymorphie)
-            - `dyn Exp` steht für eine Instanz eines beliebigen Typs, der den Trait Exp implementiert.
-            - konkreter Typ erst zur Laufzeit bekannt
-        - Warum `Box`?
-            - Typgrößen müssen zur Kompilierzeit bekannt sein. Da der AST beliebig groß werden kann, verstecken wir Kindknoten hinter Pointern, weil sie konstante Größe haben.
-    - NOTE: struct def und Trait impl sind separate Blöcke. vgl Java: Interface hinzufügen ändert die Klassendefinition. Traits können sogar externe Typen erweitern, keine Vererbung nötig (ist sogar nicht möglich in Rust)
-    - Alternativ könnte Enums verwendet werden. Könnte sogar performanter sein (Box<dyn Exp> pointer indirection vermieden). Enums werden aber schon für den Tokenizer verwendet, also werden hier Traits demonstriert
-    - NOTE: In Rust sind Variablen standardmäßig schreibgeschützt (vgl. C++ explizites `const`) und müssen explizit mit dem Keyword `mut` ("mutable") schreibbar gemacht werden
-    - NOTE: Rust Ownership memory management model
-        - Rules
-            - every value has one and only one variable called its owner
-            - the value is dropped when the owner goes out of scope
-        - TODO: include code snippet
-        - Zuweisung: Wert wird verschoben und die neue Variable ist jetzt sein Eigentümer
-            - alte Variable ist jetzt ungültig. weitere Zugriffe geben Kompilierfehler
-                - !!! dies erlaubt es Rust, viele Speicherfehler (bsp. Double-Free von Heap-Variablen) zur Kompilierzeit zu erkennen
-            - Ausnahme: bei Typen mit `Copy` Trait bleibt originaler Eigentümer gültig nach Zuweisung
-            - `Clone` Trait für tiefe Kopien
-        - Reference (`&val`): `val` ausleihen, ohne Eigentümer zu werden. Erfordert zu Kompilierzeit dass Lifetime von Referenz nachweisbar kürzer-gleich Lifetime von Wert. Ungültige Referenz ist Kompilierfehler statt Runtime-Fehler
+TODO: translate
+
+The parser converts code into a tree of expressions. Each internal node represents an operation (addition or multiplication) and its children are the operation's arguments, which can either be terminals representing integer literals or another expression.
+
+In C++, we can represent the AST as a tree of `Exp` objects, with subclasses for each type of expression. Due to polymorphism, the type of our AST is `shared_ptr<Exp>`.
+
+```cpp
+class Exp {
+public:
+    virtual int eval() = 0;
+    ...
+};
+
+class IntExp : public Exp {
+    int val;
+    ...
+};
+
+class PlusExp : public Exp {
+    std::shared_ptr<Exp> e1;
+    std::shared_ptr<Exp> e2;
+    ...
+};
+
+
+class MultExp : public Exp {
+    std::shared_ptr<Exp> e1;
+    std::shared_ptr<Exp> e2;
+    ...
+};
+```
+
+Rust does not have classes or inheritance. Instead, the main abstraction mechanism is Traits, which define what behaviors (methods) a particular type has. Traits are similar to interfaces in other languages but with some differences such as being able to provide default implementations.
+
+For the AST we define an `Exp` trait with the desired methods and implement the trait for each expression type. Child nodes in the tree have the type `Box<dyn Exp>`, which is roughly equivalent to a `std::unique_ptr<Exp>` in C++. In both languages we use a pointer because the type's size must be known at compile time. Here, `dyn Exp` signifies that the `Box` points to some value whose type implements the `Exp` trait.
+
+```rust
+pub trait Exp {
+    fn eval(&self) -> i32;
+    ...
+}
+
+pub struct IntExp {
+    val: i32,
+}
+impl Exp for IntExp { /* Exp method implementations */ }
+
+pub struct PlusExp {
+    l: Box<dyn Exp>,
+    r: Box<dyn Exp>,
+}
+impl Exp for PlusExp { /* Exp method implementations */ }
+
+pub struct MultExp {
+    l: Box<dyn Exp>,
+    r: Box<dyn Exp>,
+}
+impl Exp for MultExp { /* Exp method implementations */ }
+```
+
+An alternative implementation uses Enums instead of Traits. In Rust, each enum variant can hold additional data. This data type is usually called a tagged union in other languages. Instead of implementing methods separately for each type of expression, there would only be one implementation for the whole enum and the correct behavior would be chosen by `match`-ing on the enum variant (similar to `switch` in C++).
+
+```rust
+pub enum Exp {
+    IntExp(i32),
+    PlusExp { l: Box<Exp>, r: Box<Exp>},
+    MultExp { l: Box<Exp>, r: Box<Exp>},
+}
+
+impl Exp {
+    pub fn eval(&self) -> i32 {
+        match *self {
+            IntExp(i) => { /* Int-specific behavior */ }
+            PlusExp(l, r) => { /* Plus-specific behavior */ }
+            MultExp(l, r) => { /* Mult-specific behavior */ }
+        }
+    }
+    ...
+}
+```
 
 ### Tokenizer
+TODO
 - Rust
     - Enum + pattern matching
 
 ### Parser
+TODO
 - Exp dynamic (heap) vs static (stack): Rust variable lifetime specifier
 
 ### Compiler
+TODO
 
 ### Virtuelle Maschine
+TODO
 - C++
     - Opcodes sind *fast* als Enum darstellbar. Problem: PUSH braucht einen `int`, also müssen wir leider eine Klasse verwenden, die Opcode + optionaler int speichern kann
 - Rust
     - Enum: eigentlich eine tagged union (Werte können unterschiedliche Typen sein + Enum weiß welcher Typ enthalten ist). Erlaubt uns einfach PUSH zusammen mit i32-Wert zu speichern, ohne eigene `struct` zu definieren
 
 ### Fehler-Behandlung
+TODO
 - C++: Exceptions oder spezielle Rückgabewerte (hier wird Optional verwendet)
 - Rust:
     - `Result<T, Err>`. Enum von Rückgabewert T und Fehlerwert Err. bsp `Result<Exp, String>`
@@ -129,4 +188,4 @@ Literatur
 ---------
 
 - // Rust book: https://doc.rust-lang.org/book/
-- // DE translation: https://rust-lang-de.github.io/rustbook-de/
+- // Deutsche Übersetzung: https://rust-lang-de.github.io/rustbook-de/

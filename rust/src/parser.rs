@@ -12,7 +12,6 @@ impl Parser {
         }
     }
 
-    // TODO: Result for better parse errors
     // E ::= T E'
     pub fn parse(&mut self) -> Result<Box<dyn ast::Exp>, String> {
         self.parse_e()
@@ -30,12 +29,7 @@ impl Parser {
         if let Token::PLUS = self.t.token {
             self.t.next_token();
             let right = self.parse_t()?;
-            // TODO: does this pass tests?
-            // if let Some(right) = right {
-                self.parse_e2(Box::new(ast::PlusExp::new(left, right)))
-            // } else {
-            //     Ok(right)
-            // }
+            self.parse_e2(Box::new(ast::PlusExp::new(left, right)))
         } else {
             Ok(left)
         }

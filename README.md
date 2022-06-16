@@ -95,15 +95,15 @@ class IntExp : public Exp {
 };
 
 class PlusExp : public Exp {
-    std::shared_ptr<Exp> e1;
-    std::shared_ptr<Exp> e2;
+    std::shared_ptr<Exp> e1; // left argument
+    std::shared_ptr<Exp> e2; // right argument
     ...
 };
 
 
 class MultExp : public Exp {
-    std::shared_ptr<Exp> e1;
-    std::shared_ptr<Exp> e2;
+    std::shared_ptr<Exp> e1; // left argument
+    std::shared_ptr<Exp> e2; // right argument
     ...
 };
 ```
@@ -158,9 +158,86 @@ impl Exp {
 ```
 
 ### Tokenizer
-TODO
-- Rust
-    - Enum + pattern matching
+TODO: translate
+
+The tokenizer reads code and produces a stream of tokens for the parser. In C++ we use an enum for the tokens and a simple switch statement to match characters to their corresponding tokens.
+
+```cpp
+typedef enum {
+    EOS, ZERO, ONE, TWO, OPEN, CLOSE, PLUS, MULT
+} Token_t;
+
+class Tokenize {
+    string s;
+    int pos;
+    ...
+}
+
+Token_t Tokenize::next() {
+    while(1) {
+        if(s.length() <= pos)
+            return EOS;
+
+        switch(s[pos++]) {
+            case '0': return ZERO;
+            case '1': return ONE;
+            case '2': return TWO;
+            case '(': return OPEN;
+            case ')': return CLOSE;
+            case '+': return PLUS;
+            case '*': return MULT;
+            default: break; // we simply skip all other symbols !
+        }
+    }
+}; // next
+```
+
+The Rust version works almost exactly the same way using a `match` statement. In this implementation the `match` maps characters to enum values. The value is wrapped in an optional type `Option<Token>`, where a value  of `None` represents an invalid symbol.
+
+```rust
+pub enum Token {
+    EOS, ZERO, ONE, TWO, OPEN, CLOSE, PLUS, MULT,
+}
+
+pub struct Tokenizer {
+    pub token: Token,
+    s: Vec<char>,
+    pos: usize,
+}
+
+impl Tokenizer {
+    ...
+    pub fn next_token(&mut self) {
+        loop {
+            if self.pos >= self.s.len() {
+                self.token = Token::EOS;
+                break;
+            }
+            // match symbol to token
+            let token = match self.s[self.pos] {
+                '0' => Some(Token::ZERO),
+                '1' => Some(Token::ONE),
+                '2' => Some(Token::TWO),
+                '(' => Some(Token::OPEN),
+                ')' => Some(Token::CLOSE),
+                '+' => Some(Token::PLUS),
+                '*' => Some(Token::MULT),
+                _ => None,
+            };
+            match token {
+                Some(token) => { // set current token
+                    self.token = token;
+                    self.pos += 1;
+                    break;
+                },
+                None => (),  // skip all other symbols
+            }
+            self.pos += 1;
+        }
+    }
+    ...
+}
+```
 
 ### Parser
 TODO

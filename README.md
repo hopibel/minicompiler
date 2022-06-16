@@ -341,15 +341,131 @@ impl Parser {
 }
 ```
 
-### Compiler
-TODO
-
 ### Virtuelle Maschine
-TODO
-- C++
-    - Opcodes sind *fast* als Enum darstellbar. Problem: PUSH braucht einen `int`, also müssen wir leider eine Klasse verwenden, die Opcode + optionaler int speichern kann
-- Rust
-    - Enum: eigentlich eine tagged union (Werte können unterschiedliche Typen sein + Enum weiß welcher Typ enthalten ist). Erlaubt uns einfach PUSH zusammen mit i32-Wert zu speichern, ohne eigene `struct` zu definieren
+TODO: translate
+
+The virtual machine runs sequentially through the opcodes of a compiled expression. Instructions push or pop values from the stack and the expression result is left on top of the stack. At first glance, an enum seems like a perfect fit for the opcodes. However, the `PUSH` instruction requires an argument for the value to push onto the stack. This forces us to use a struct or class to hold the opcode and an optional argument.
+
+```cpp
+typedef enum {
+    OP_PUSH, OP_PLUS, OP_MULT
+} OpCode_t;
+
+class Code {
+public:
+    OpCode_t kind;
+    int val; // optional argument
+    ...
+};
+
+class VM {
+private:
+    std::vector<Code> code;
+    std::stack<int> s;
+public:
+    VM(std::vector<Code> c) : code(c) {}
+    Optional<int> run() {
+        s = std::stack<int>(); // reset stack
+        for(int i = 0; i < code.size(); i++) {
+            switch(code[i].kind) {
+            case OP_PUSH:
+                s.push(code[i].val);
+                break;
+            case OP_MULT:
+                int right = s.top(); s.pop();
+                int left = s.top(); s.pop();
+                s.push(left * right);
+                break;
+            case OP_PLUS: ...
+            }
+        }
+        return s.empty() ? nothing<int>() : just<int>(s.top());
+    } // run
+};
+```
+
+Recall that enum variants in Rust can store additional values. This allows us to store arguments together with their opcode directly in the enum. Otherwise the logic is the same, though we once again take advantage of the `Result` type to provide better error messages.
+
+```rust
+pub enum Code {
+    Push(i32), Plus, Mult,
+}
+
+pub struct VM {
+    code: Vec<Code>,
+    stack: Vec<i32>,
+}
+
+impl VM {
+    ...
+
+    // Result instead of Option to clearly communicate error
+    pub fn run(&mut self) -> Result<i32, String> {
+        ...
+        // enumerate to provide line number in errors
+        for code in self.code.iter().enumerate() {
+            match code.1 {
+                Code::Push(val) => { self.stack.push(*val); }
+                Code::Plus => {
+                    if self.stack.len() < 2 {
+                        return Err(format!(
+                            "L{} PLUS: not enough values on stack. Expected two",
+                            code.0
+                        ));
+                    }
+                    let right = self.stack.pop().unwrap();
+                    let left = self.stack.pop().unwrap();
+                    self.stack.push(left + right);
+                }
+                Code::Mult => { ... }
+            }
+        }
+        ...
+    }
+}
+```
+
+### Compiler
+TODO: translate
+
+Compiling translates the AST into a sequence of opcodes for the virtual machine. Operands must be pushed onto the stack before running an instruction, which is accomplished by traversing the AST and mapping nodes to opcodes in postfix order. For example, the expression "1+2" results in the opcode sequence `Push(1), Push(2), Plus`.
+
+In both C++ and Rust we recursively compile the left, right and root nodes of the AST and concatenate the resulting opcode sequences in that order to produce the final compiled expression.
+
+C++:
+
+```cpp
+std::vector<Code>& IntExp::toCode(std::vector<Code>& code) {
+    code.push_back(newPush(val));
+    return code;
+}
+
+std::vector<Code>& PlusExp::toCode(std::vector<Code>& code) {
+    e1->toCode(code);
+    e2->toCode(code);
+    code.push_back(newPlus());
+    return code;
+}
+```
+
+Rust:
+
+```rust
+impl Exp for IntExp {
+    fn compile(&self) -> Vec<vm::Code> {
+        vec![vm::Code::Push(self.val)]
+    }
+}
+
+impl Exp for PlusExp {
+    fn compile(&self) -> Vec<vm::Code> {
+        let mut code = self.l.compile();
+        code.append(&mut self.r.compile());
+        code.push(vm::Code::Plus);
+        code
+    }
+}
+```
 
 Literatur
 ---------

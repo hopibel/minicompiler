@@ -16,9 +16,7 @@ Code newMult() {
 
 
 Optional<int> VM::run() {
-    // always start with an empty stack
-    std::stack<int> d;
-    s.swap(d);
+    s = std::stack<int>(); // reset stack
 
     for(int i = 0; i < code.size(); i++) {
         switch(code[i].kind) {

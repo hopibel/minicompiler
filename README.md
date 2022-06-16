@@ -3,15 +3,11 @@
 Projektarbeit: Mini-Compiler in Rust
 ====================================
 
-# (WIP)
+Aufgabe: Mini-Compiler C++11 Projekt in Rust portieren
 
-// Aufgabe: mini-compiler C++11 projekt in Rust portieren
+Dieses Projekt dokumentiert den Prozess des Portierens eines Parsers, eines Compilers und einer virtuellen Maschine für einfache arithmetische Ausdrücke von C++ nach Rust.
 
-// Basis: [Parser/Interpreter/Compiler für arithmetische Ausdrücke](https://sulzmann.github.io/SoftwareProjekt/schein-neu.html#(5))
-
-TODO: what does the project do
-
-// expressions are tokenized and parsed into an abstract syntax tree which can be interpreted directly or compiled into opcodes for the included stack-based virtual machine
+Basiert auf: [Parser/Interpreter/Compiler für arithmetische Ausdrücke](https://sulzmann.github.io/SoftwareProjekt/schein-neu.html#(5))
 
 Usage
 -----
@@ -51,36 +47,17 @@ cargo clean
 Portierung von C++11 nach Rust
 ------------------------------
 
-- NOTE: keep short. mainly use concrete examples for translation from C++ to Rust
-
 ### Projekt-Setup
-TODO
-- C++: Makefile schreiben
-    - Manuell definieren, wie Programme kompiliert werden sollen
-    - Reines Build-Tool.
-- Rust: `cargo new --lib <name>`
-    - Cargo: offizielles Bau-System und Paketmanager von Rust
-    - cargo kümmert sich um alles
-        - package manager: externe dependencies ("crates") automatisch heruntergeladen (vgl. npm, pip)
-        - build
-            - projekt-struktur durch Ordner-Hierarchie und Imports definieren (vgl. Makefile/cmake wo jede datei eingetragen wird)
-                - `src/main.rs`: default executable file, weitere in `src/bin/`
-                - `src/lib.rs`: default library file
-        - tests: mehr dazu unten
 
-### Testen
-TODO
-- C++: selbstgemachte test-util. inflexibel. alternativ: externe Bibliothek
-- Rust: first-class support für unit und integration tests durch cargo
-    - unit tests als private submodule: einzelnes Modul testen. innerhalb Modul können private Schnittstellen getestet werden
-    - integration tests in `tests/`: tests laufen ausserhalb Modul, verwenden nur öffentliche Schnittstellen
+Das C++ Projekt wird mithilfe eines Makefiles kompiliert, worin die Compiler-Argumente definiert werden. Der Nachteil ist, dass Makefiles oft manuell geschrieben werden und ein reines Build-Tool ohne Unterstützung für die Verwaltung von Dependencies sind.
+
+Cargo ist das offizielle Bau-System und Paketmanager von Rust. Cargo kümmert sich um alles, vom Herunterladen externer Dependencies ("crates") bis zum Build-Prozess. Mit `cargo new --bin/--lib <name>` kann man sofort ein minimales, erstellbares Projekt erstellen. Die Projektstruktur wird durch die Verzeichnisstruktur und die Modulimporte definiert, anstatt durch eine manuell gepflegte Konfigurationsdatei. Standardmäßig erzeugt Cargo die Datei `src/main.rs` für ausführbare Programme und `src/lib.rs` für Bibliotheken.
 
 ### AST
-TODO: translate
 
-The parser converts code into a tree of expressions. Each internal node represents an operation (addition or multiplication) and its children are the operation's arguments, which can either be terminals representing integer literals or another expression.
+Der Parser konvertiert Code in einen Baum von Ausdrücken. Jeder interne Knoten repräsentiert eine Operation (Addition oder Multiplikation) und seine Kinder sind die Argumente der Operation, die entweder Literale oder ein anderer Ausdruck sein können.
 
-In C++, we can represent the AST as a tree of `Exp` objects, with subclasses for each type of expression. Due to polymorphism, the type of our AST is `shared_ptr<Exp>`.
+In C++ können wir den AST als Baum von `Exp`-Objekten darstellen, wobei wir für jeden Ausdruckstyp eine Subklasse erzeugen. Wegen Polymorphismus verwenden wir `shared_ptr<Exp>` als Typ für den AST.
 
 ```cpp
 class Exp {
@@ -108,9 +85,9 @@ class MultExp : public Exp {
 };
 ```
 
-Rust does not have classes or inheritance. Instead, the main abstraction mechanism is Traits, which define what behaviors (methods) a particular type has. Traits are similar to interfaces in other languages but with some differences such as being able to provide default implementations.
+Rust hat weder Klassen noch Vererbung. Stattdessen hat es Traits als Abstraktionsmechanismus. Traits definieren, welche Funktionalitäten (Methoden) ein bestimmter Typ haben soll. Traits ähneln Interfaces in anderen Sprachen wie Java, weisen jedoch Unterschiede auf, z.B. die Möglichkeit, Standardimplementierungen zu definieren.
 
-For the AST we define an `Exp` trait with the desired methods and implement the trait for each expression type. Child nodes in the tree have the type `Box<dyn Exp>`, which is roughly equivalent to a `std::unique_ptr<Exp>` in C++. In both languages we use a pointer because the type's size must be known at compile time. Here, `dyn Exp` signifies that the `Box` points to some value whose type implements the `Exp` trait.
+Für den AST definieren wir ein `Exp`-Trait mit den gewünschten Methoden und implementieren das Trait für jeden Ausdruckstyp. Knoten in der Baumstruktur haben den Typ `Box<dyn Exp>`, was ungefähr dem `std::unique_ptr<Exp>` in C++ entspricht. In beiden Sprachen verwenden wir einen Pointer, da die Größe des Typs zur Kompilierzeit bekannt sein muss. Hier bedeutet `dyn Exp`, dass der `Box` auf einen Wert verweist, dessen Typ das `Exp`-Trait implementiert.
 
 ```rust
 pub trait Exp {
@@ -136,7 +113,7 @@ pub struct MultExp {
 impl Exp for MultExp { /* Exp method implementations */ }
 ```
 
-An alternative implementation uses Enums instead of Traits. In Rust, each enum variant can hold additional data. This data type is usually called a tagged union in other languages. Instead of implementing methods separately for each type of expression, there would only be one implementation for the whole enum and the correct behavior would be chosen by `match`-ing on the enum variant (similar to `switch` in C++).
+Eine alternative Implementierung verwendet Enums statt Traits. In Rust kann jede Enum-Variante zusätzliche Daten enthalten. Dieser Datentyp wird in anderen Sprachen normalerweise als Tagged Union bezeichnet. Statt für jeden Ausdrucktyp einzeln Methoden zu implementieren, würde es hier nur eine Implementierung für das gesamte Enum geben, und das korrekte Verhalten würde durch eine Fallunterscheidung auf die Enum-Variante mit `match` ausgewählt (ähnlich wie `switch` in C++).
 
 ```rust
 pub enum Exp {
@@ -158,9 +135,8 @@ impl Exp {
 ```
 
 ### Tokenizer
-TODO: translate
 
-The tokenizer reads code and produces a stream of tokens for the parser. In C++ we use an enum for the tokens and a simple switch statement to match characters to their corresponding tokens.
+Der Tokenizer liest Code und erzeugt einen Strom von Tokens für den Parser. In C++ verwenden wir einen Enum für die Tokens und einen `switch`, um Symbole in die entsprechenden Tokens zu übersetzen.
 
 ```cpp
 typedef enum {
@@ -192,7 +168,7 @@ Token_t Tokenize::next() {
 }; // next
 ```
 
-The Rust version works almost exactly the same way using a `match` statement. In this implementation the `match` maps characters to enum values. The value is wrapped in an optional type `Option<Token>`, where a value  of `None` represents an invalid symbol.
+Die Rust-Implementierung funktioniert fast genauso mit einer `match`-Anweisung. In dieser Implementierung werden Symbole auch in Enum-Werte übersetzt. Der Wert wird in einem optionalen Typ `Option<Token>` eingewickelt, wobei ein Wert von `None` ein ungültiges Symbol darstellt.
 
 ```rust
 pub enum Token {
@@ -240,9 +216,8 @@ impl Tokenizer {
 ```
 
 ### Parser
-TODO: translate
 
-The parser reads the stream of tokens and produces an AST. As a recursive descent parser, the AST is generated by recursively applying the grammar's expansion rules, which are implemented as individual functions. In C++ we bundle the grammar rules in a `Parser` class that holds a tokenizer to provide access to the token stream. Each rule returns an optional containing the parsed AST or null in case of a syntax error.
+Der Parser liest den Strom von Tokens und erzeugt einen AST. Als rekursiver Abstiegsparser wird der AST durch rekursive Anwendung der Erweiterungsregeln der Grammatik erzeugt, die als einzelne Funktionen implementiert sind. In C++ bündeln wir die Grammatikregeln in einer `Parser`-Klasse, die einen Tokenizer enthält, um auf den Tokenstrom zugreifen zu können. Jede Regel gibt ein optionaler Typ zurück, das den geparsten AST enthält, oder `null` bei einem Syntaxfehler.
 
 ```cpp
 class Parser {
@@ -291,7 +266,7 @@ public:
 };
 ```
 
-The Rust implementation for the parser is more or less identical. The main difference is it returns a `Result<T, Err>`, which can either hold a normal return type or an error type. Here we return the AST as a `Box<dyn Exp>` or a string with a detailed error message. This could be accomplished in the C++ version by returning a custom result object, but Rust makes it more convenient by providing a standard `Result` type. Exceptions are another alternative but aren't always suitable because they interrupt program flow and have a larger performance impact.
+Die Rust-Implementierung für den Parser ist mehr oder weniger identisch. Der Hauptunterschied besteht darin, dass sie ein `Result<T, Err>` zurückgibt, das entweder den normalen Rückgabewert oder eine Fehlermeldung enthalten kann. Hier geben wir die AST als `Box<dyn Exp>` oder einen String mit einer ausführlichen Fehlermeldung zurück. Dies könnte in der C++-Implementierung durch Rückgabe eines benutzerdefinierten Ergebnisobjekts erreicht werden, aber Rust macht es durch Bereitstellung eines Standard-Typs bequemer. Exceptions sind eine andere Alternative, aber nicht immer geeignet, weil sie den Programmfluss unterbrechen und einen größeren Leistungsimpact haben können.
 
 ```rust
 pub struct Parser {
@@ -342,9 +317,8 @@ impl Parser {
 ```
 
 ### Virtuelle Maschine
-TODO: translate
 
-The virtual machine runs sequentially through the opcodes of a compiled expression. Instructions push or pop values from the stack and the expression result is left on top of the stack. At first glance, an enum seems like a perfect fit for the opcodes. However, the `PUSH` instruction requires an argument for the value to push onto the stack. This forces us to use a struct or class to hold the opcode and an optional argument.
+Die virtuelle Maschine führt sequentiell die Opcodes eines kompilierten Ausdrucks aus. Anweisungen legen Werte auf den Stack oder nehmen sie vom Stack, und das Ergebnis des Ausdrucks bleibt oben auf dem Stack. Auf den ersten Blick scheint ein Enum die perfekte Wahl für die Opcodes zu sein. Die Anweisung `PUSH` braucht aber ein Argument für den auf den Stack zu legenden Wert. Dies zwingt uns, eine `struct` oder eine Klasse zu verwenden, um den Opcode und ein optionales Argument zu halten.
 
 ```cpp
 typedef enum {
@@ -384,7 +358,7 @@ public:
 };
 ```
 
-Recall that enum variants in Rust can store additional values. This allows us to store arguments together with their opcode directly in the enum. Otherwise the logic is the same, though we once again take advantage of the `Result` type to provide better error messages.
+Erinnern Sie sich, dass Enum-Varianten in Rust zusätzliche Werte speichern können. Dies ermöglicht es uns, Argumente zusammen mit ihrem Opcode direkt in das Enum zu speichern. Ansonsten ist die Logik gleich, wobei wir wieder den `Result`-Typ verwenden, um bessere Fehlermeldungen zu erhalten.
 
 ```rust
 pub enum Code {
@@ -426,11 +400,10 @@ impl VM {
 ```
 
 ### Compiler
-TODO: translate
 
-Compiling translates the AST into a sequence of opcodes for the virtual machine. Operands must be pushed onto the stack before running an instruction, which is accomplished by traversing the AST and mapping nodes to opcodes in postfix order. For example, the expression "1+2" results in the opcode sequence `Push(1), Push(2), Plus`.
+Die Kompilierung übersetzt den AST in eine Reihe von Opcodes für die virtuelle Maschine. Operanden müssen auf den Stack geschoben werden, bevor eine Anweisung ausgeführt wird, was durch Durchlaufen des AST und Übersetzung von Knoten zu Opcodes in Postfix-Reihenfolge erreicht wird. Zum Beispiel ergibt der Ausdruck "1+2" die Opcode-Sequenz `Push (1), Push (2), Plus`.
 
-In both C++ and Rust we recursively compile the left, right and root nodes of the AST and concatenate the resulting opcode sequences in that order to produce the final compiled expression.
+In C++ und Rust kompilieren wir die linken, rechten und Wurzelknoten des AST rekursiv und fügen die resultierenden Opcode-Sequenzen in dieser gleichen Reihenfolge zusammen, um den finalen kompilierten Ausdruck zu erhalten.
 
 C++:
 
@@ -470,5 +443,5 @@ impl Exp for PlusExp {
 Literatur
 ---------
 
-- // Rust book: https://doc.rust-lang.org/book/
-- // Deutsche Übersetzung: https://rust-lang-de.github.io/rustbook-de/
+- The Rust Programming Language: https://doc.rust-lang.org/book/
+    - DE: Die Programmiersprache Rust: https://rust-lang-de.github.io/rustbook-de/

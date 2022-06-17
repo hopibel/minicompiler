@@ -7,6 +7,8 @@ Aufgabe: Mini-Compiler C++11 Projekt in Rust portieren
 
 Dieses Projekt dokumentiert den Prozess des Portierens eines Parsers, eines Compilers und einer virtuellen Maschine für einfache arithmetische Ausdrücke von C++ nach Rust.
 
+Code: [https://github.com/hopibel/minicompiler](https://github.com/hopibel/minicompiler)
+
 Basiert auf: [Parser/Interpreter/Compiler für arithmetische Ausdrücke](https://sulzmann.github.io/SoftwareProjekt/schein-neu.html#(5))
 
 Usage
